@@ -40,6 +40,7 @@ jobs:
 
       - name: Start stack with docker-compose
         env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
           REDIS_HOST: ${{ vars.REDIS_HOST }}
           REDIS_PORT: ${{ vars.REDIS_PORT }}
           REDIS_CHANNEL: ${{ vars.REDIS_CHANNEL }}
