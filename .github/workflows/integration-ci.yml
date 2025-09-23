@@ -41,9 +41,9 @@ jobs:
       - name: Start stack with docker-compose
         env:
           DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          REDIS_HOST: ${{ vars.REDIS_HOST }}
-          REDIS_PORT: ${{ vars.REDIS_PORT }}
-          REDIS_CHANNEL: ${{ vars.REDIS_CHANNEL }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_CHANNEL: ${{ secrets.REDIS_CHANNEL }}
           SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: docker compose -f docker-compose.yml up -d
