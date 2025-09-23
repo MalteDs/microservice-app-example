@@ -62,7 +62,9 @@ jobs:
 
       - name: Run E2E Integration Tests
         run: |
-          curl -f http://localhost:8080/login || exit 1
+          curl -f -X POST http://localhost:8080/login \
+            -H "Content-Type: application/json" \
+            -d '{"username":"admin","password":"admin"}'
           curl -f http://localhost:3000/todos || exit 1
           curl -f http://localhost:8085 || exit 1
 
