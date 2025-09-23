@@ -20,11 +20,12 @@ env:
   IMAGE_VERSION: v1.${{ github.run_number }}
   DOCKER_USER: ${{ vars.DOCKERHUB_USERNAME }}
   DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
 
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
       - name: Checkout repository
