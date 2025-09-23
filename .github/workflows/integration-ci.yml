@@ -62,11 +62,14 @@ jobs:
 
       - name: Run E2E Integration Tests
         run: |
-          curl -f -X POST http://localhost:8080/login \
+          TOKEN=$(curl -s -X POST http://localhost:8080/login \
             -H "Content-Type: application/json" \
             -d '{"username":"admin","password":"admin"}' | jq -r .accessToken)
+
           echo "Access token: $TOKEN"
+
           curl -f -H "Authorization: Bearer $TOKEN" http://localhost:3000/todos
+
           curl -f http://localhost:8085 || exit 1
 
       - name: Show logs if fail
