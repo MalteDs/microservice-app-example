@@ -15,6 +15,11 @@ services:
       - "8080:8080"
     environment:
       - REDIS_HOST=${REDIS_HOST}
+      - AUTH_API_PORT=8080
+      - USERS_API_ADDRESS=http://users-api:8083
+      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - microservice_net
@@ -23,10 +28,12 @@ services:
     build: ./users-api
     container_name: users-api
     ports:
-      - "8081:8083"
+      - "8083:8083"
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - microservice_net
@@ -38,6 +45,9 @@ services:
       - "3000:8082"
     environment:
       - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - microservice_net
@@ -49,6 +59,8 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_CHANNEL=${REDIS_CHANNEL}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - microservice_net
@@ -62,6 +74,15 @@ services:
       - auth-api
       - users-api
       - todos-api
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
     restart: unless-stopped
     networks:
       - microservice_net
