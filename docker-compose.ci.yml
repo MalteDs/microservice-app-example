@@ -1,0 +1,91 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  auth-api:
+    image: ${{ vars.DOCKERHUB_USERNAME }}/auth-api
+    container_name: auth-api
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - AUTH_API_PORT=8080
+      - USERS_API_ADDRESS=http://users-api:8083
+      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  users-api:
+    image: ${{ vars.DOCKERHUB_USERNAME }}/users-api
+    container_name: users-api
+    ports:
+      - "8083:8081"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  todos-api:
+    image: ${{ vars.DOCKERHUB_USERNAME }}/todos-api
+    container_name: todos-api
+    ports:
+      - "3000:8082"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  log-message-processor:
+    image: ${{ vars.DOCKERHUB_USERNAME }}/log-message-processor
+    container_name: log-processor
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CHANNEL=${REDIS_CHANNEL}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  frontend:
+    image: ${{ vars.DOCKERHUB_USERNAME }}/frontend
+    container_name: frontend
+    ports:
+      - "8085:80"
+    depends_on:
+      - auth-api
+      - users-api
+      - todos-api
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    restart: unless-stopped
+    networks:
+      - microservice_net
+
+networks:
+  microservice_net:
