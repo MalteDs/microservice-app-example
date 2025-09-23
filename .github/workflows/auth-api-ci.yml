@@ -1,0 +1,71 @@
+name: Auth API - Build & Test
+
+on:
+  push:
+    branches:
+      - dev
+      - feature/github-actions-ci
+    paths:
+      - 'auth-api/**'
+      - '.github/workflows/auth-api-ci.yml'
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'auth-api/**'
+      - '.github/workflows/auth-api-ci.yml'
+
+env:
+  SERVICE_NAME: auth-api
+  IMAGE_VERSION: ${{ github.sha }}
+  DOCKER_REGISTRY: docker.io/${{ vars.DOCKERHUB_USERNAME }}
+
+jobs:
+  build:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Auth API image (no push yet)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth-api
+          push: false
+          tags: ${{ env.SERVICE_NAME }}-ci:${{ env.IMAGE_VERSION }}
+
+      - name: Run Unit Tests (Go)
+        run: |
+          cd auth-api
+          go test ./... -v
+
+  push:
+    name: Push Image to DockerHub
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Auth API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth-api
+          push: true
+          tags: |
+            ${{ env.DOCKER_REGISTRY }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
+            ${{ env.DOCKER_REGISTRY }}/${{ env.SERVICE_NAME }}:latest
