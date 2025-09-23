@@ -34,8 +34,8 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKER_USER }}
-          password: ${{ env.DOCKER_PASS }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       # Construir y subir imagen Docker (usa Dockerfile existente)
       - name: Build and Push Docker Image
@@ -45,8 +45,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:latest
-            ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:latest
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -55,7 +55,7 @@ jobs:
 
         run: |
           # Reemplaza la imagen de frontend en docker-compose por la recién construida
-          sed -i "s|build: ./frontend|image: ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}|" docker-compose.yml
+          sed -i "s|build: ./frontend|image: ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}|" docker-compose.yml
           docker compose -f docker-compose.yml up -d frontend auth-api users-api todos-api redis
           sleep 20
           curl -f http://localhost:8085 || (docker compose logs frontend && exit 1)
