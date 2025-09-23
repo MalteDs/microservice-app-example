@@ -28,6 +28,7 @@ services:
     ports:
       - "8083:8081"
     environment:
+      - JWT_SECRET=${JWT_SECRET}
       - REDIS_HOST=${REDIS_HOST}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
     restart: unless-stopped
