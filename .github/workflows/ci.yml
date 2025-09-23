@@ -26,10 +26,10 @@ jobs:
           list-files: json
           filters: |
             frontend: 'frontend/**'
-            todos: 'todos-api/**'
-            users: 'users-api/**'
-            auth: 'auth-api/**'
-            log: 'log-message-processor/**'
+            todos-api: 'todos-api/**'
+            users-api: 'users-api/**'
+            auth-api: 'auth-api/**'
+            log-message-processor: 'log-message-processor/**'
 
   build-test-scan:
     runs-on: ubuntu-latest
@@ -54,7 +54,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/devops-${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/devops-${{ matrix.service }}
           tags: |
             type=ref,event=branch
             type=sha
@@ -100,7 +100,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
-          image-ref: ${{ env.REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/devops-${{ matrix.service }}:latest
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/devops-${{ matrix.service }}:latest
           format: 'table'
 
   deploy-staging:
