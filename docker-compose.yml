@@ -9,7 +9,7 @@ services:
       - microservice_net
 
   auth-api:
-    build: ./auth-api
+    image: ${{ vars.DOCKERHUB_USERNAME }}/auth-api
     container_name: auth-api
     ports:
       - "8080:8080"
@@ -25,7 +25,7 @@ services:
       - microservice_net
 
   users-api:
-    build: ./users-api
+    image: ${{ vars.DOCKERHUB_USERNAME }}/users-api
     container_name: users-api
     ports:
       - "8083:8081"
@@ -39,7 +39,7 @@ services:
       - microservice_net
 
   todos-api:
-    build: ./todos-api
+    image: ${{ vars.DOCKERHUB_USERNAME }}/todos-api
     container_name: todos-api
     ports:
       - "3000:8082"
@@ -53,7 +53,7 @@ services:
       - microservice_net
 
   log-message-processor:
-    build: ./log-message-processor
+    image: ${{ vars.DOCKERHUB_USERNAME }}/log-message-processor
     container_name: log-processor
     environment:
       - REDIS_HOST=${REDIS_HOST}
@@ -66,7 +66,7 @@ services:
       - microservice_net
 
   frontend:
-    build: ./frontend
+    image: ${{ vars.DOCKERHUB_USERNAME }}/frontend
     container_name: frontend
     ports:
       - "8085:80"
