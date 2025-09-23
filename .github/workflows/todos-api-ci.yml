@@ -24,8 +24,7 @@ env:
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
-    environment: dev
-
+    
     steps:
       # 1. Checkout del repositorio
       - name: Checkout repository

@@ -24,8 +24,6 @@ env:
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
-    environment: dev
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,6 +52,7 @@ jobs:
 
       # Smoke test usando docker-compose para levantar dependencias
       - name: Smoke test with docker-compose
+
         run: |
           # Reemplaza la imagen de frontend en docker-compose por la recién construida
           sed -i "s|build: ./frontend|image: ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}|" docker-compose.yml
