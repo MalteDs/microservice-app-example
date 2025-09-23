@@ -15,8 +15,6 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     environment: integration
-    services:
-      # Opcional: puedes usar servicios de GitHub Actions para Redis, pero aquí todo va por docker-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
