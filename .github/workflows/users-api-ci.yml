@@ -1,4 +1,4 @@
-name: Users API - CI Pipeline
+name: Users API - CI/CD Pipeline
 
 on:
   push:
@@ -15,17 +15,21 @@ on:
       - 'users-api/**'
       - '.github/workflows/users-api-ci.yml'
 
+env:
+  SERVICE_NAME: users-api
+  IMAGE_VERSION: v1.${{ github.run_number }}
+  DOCKER_USER: ${{ vars.DOCKERHUB_USERNAME }}
+  DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
-    environment: dev  # para que coja tus secrets/variables de environment dev
+    environment: dev
 
     steps:
-      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up JDK 17 (o la versión que uses en users-api)
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -33,28 +37,25 @@ jobs:
           java-version: '11'
           cache: 'maven'
 
-      # 3. Set up Docker Buildx (para imágenes)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 4. Log in to DockerHub (usa tus secrets)
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKER_USER }}
+          password: ${{ env.DOCKER_PASS }}
 
-      # 5. Build Users API with Maven (antes de crear la imagen Docker)
-      - name: Build Users API (Maven)
+      # Build + test con Maven
+      - name: Build Users API
         working-directory: ./users-api
-        run: mvn -B -DskipTests clean package
+        run: mvn -B clean package -DskipTests
 
-      # 6. Run tests (unit/integration)
-      - name: Run Tests (Maven)
+      - name: Run Unit Tests
         working-directory: ./users-api
         run: mvn -B test
 
-      # 7. Build and push Docker image
+      # Construir y subir imagen Docker
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -62,13 +63,14 @@ jobs:
           file: ./users-api/Dockerfile
           push: true
           tags: |
-            ${{ vars.DOCKERHUB_USERNAME }}/users-api:latest
-            ${{ vars.DOCKERHUB_USERNAME }}/users-api:${{ github.sha }}
+            ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:latest
+            ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # 8. Upload surefire reports for visibility
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: users-api-surefire-reports
-          path: users-api/target/surefire-reports
+      # Smoke test del contenedor publicado
+      - name: Smoke test container
+        run: |
+          docker run -d -p 8083:8083 --name users-api-test ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
+          sleep 10
+          curl -f http://localhost:8083/actu
