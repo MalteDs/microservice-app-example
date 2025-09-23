@@ -1,4 +1,4 @@
-name: Integration CI - Full Stack
+name: Integration CI
 
 on:
   push:
@@ -14,7 +14,6 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
-    environment: integration
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
