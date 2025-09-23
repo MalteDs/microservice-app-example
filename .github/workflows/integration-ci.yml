@@ -45,7 +45,7 @@ jobs:
           REDIS_CHANNEL: ${{ vars.REDIS_CHANNEL }}
           SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: docker compose -f docker-compose.ci.yml up -d
+        run: docker compose -f docker-compose.yml up -d
 
       - name: Wait for services to be ready
         run: |
