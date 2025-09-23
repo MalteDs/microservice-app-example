@@ -64,10 +64,10 @@ jobs:
         uses: docker/build-push-action@v5
         if: |
           (matrix.service == 'frontend' && fromJSON(needs.prepare.outputs.changed-services).frontend) ||
-          (matrix.service == 'todos-api' && fromJSON(needs.prepare.outputs.changed-services).todos) ||
-          (matrix.service == 'users-api' && fromJSON(needs.prepare.outputs.changed-services).users) ||
-          (matrix.service == 'auth-api' && fromJSON(needs.prepare.outputs.changed-services).auth) ||
-          (matrix.service == 'log-message-processor' && fromJSON(needs.prepare.outputs.changed-services).log)
+          (matrix.service == 'todos-api' && fromJSON(needs.prepare.outputs.changed-services).todos-api) ||
+          (matrix.service == 'users-api' && fromJSON(needs.prepare.outputs.changed-services).users-api) ||
+          (matrix.service == 'auth-api' && fromJSON(needs.prepare.outputs.changed-services).auth-api) ||
+          (matrix.service == 'log-message-processor' && fromJSON(needs.prepare.outputs.changed-services).log-message-processor)
         with:
           context: ./${{ matrix.service }}
           push: true
