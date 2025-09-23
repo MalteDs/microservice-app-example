@@ -18,13 +18,13 @@ on:
 env:
   SERVICE_NAME: todos-api
   IMAGE_VERSION: v1.${{ github.run_number }}
-  DOCKER_USER: ${{ vars.DOCKERHUB_USERNAME }}
-  DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
       # 1. Checkout del repositorio
       - name: Checkout repository

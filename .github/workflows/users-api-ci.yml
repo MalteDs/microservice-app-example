@@ -18,8 +18,8 @@ on:
 env:
   SERVICE_NAME: users-api
   IMAGE_VERSION: v1.${{ github.run_number }}
-  DOCKER_USER: ${{ vars.DOCKERHUB_USERNAME }}
-  DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 
