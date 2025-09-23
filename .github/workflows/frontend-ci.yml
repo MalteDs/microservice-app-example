@@ -52,9 +52,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Smoke test del contenedor publicado
-      - name: Smoke test container
+      # Smoke test usando docker-compose para levantar dependencias
+      - name: Smoke test with docker-compose
         run: |
-          docker run -d -p 8085:80 --name frontend-test ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
-          sleep 10
-          curl -f http://localhost:8085 || (docker logs frontend-test && exit 1)
+          # Reemplaza la imagen de frontend en docker-compose por la recién construida
+          sed -i "s|build: ./frontend|image: ${{ env.DOCKER_USER }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}|" docker-compose.yml
+          docker compose -f docker-compose.yml up -d frontend auth-api users-api todos-api redis
+          sleep 20
+          curl -f http://localhost:8085 || (docker compose logs frontend && exit 1)

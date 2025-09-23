@@ -1,57 +1,138 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [ dev, main, feature/github-actions-ci ]
   pull_request:
-    branches:
-      - '**'
+    branches: [ dev, main ]
+
+env:
+  IMAGE_NAMESPACE: ${{ vars.DOCKERHUB_USERNAME }}
+  REGISTRY: docker.io
+
 
 jobs:
-  build-and-test:
+  prepare:
     runs-on: ubuntu-latest
-    environment: dev
-
-    # Redis para que algunos microservicios puedan conectarse durante tests
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-
+    outputs:
+      changed-services: ${{ steps.detect.outputs.json }}
     steps:
-      # 1. Checkout del repositorio
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Configuración de Docker Buildx (para builds multi-plataforma y cache)
+      - name: Detect changes in microservices
+        id: detect
+        uses: dorny/paths-filter@v3
+        with:
+          list-files: json
+          filters: |
+            frontend: 'frontend/**'
+            todos: 'todos-api/**'
+            users: 'users-api/**'
+            auth: 'auth-api/**'
+            log: 'log-message-processor/**'
+
+  build-test-scan:
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [frontend, todos-api, users-api, auth-api, log-message-processor]
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Log in a DockerHub (opcional pero recomendado)
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 4. Construir todas las imágenes Docker
-      - name: Build Docker images
-        run: |
-          docker compose build
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/devops-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      # 5. Tests para cada microservicio
-      #    (puedes personalizar esto según tus tests)
-      - name: Run tests - Users API (Spring Boot)
-        run: |
-          docker run --rm microservice-app-example-users-api ./mvnw test -DskipTests=false || echo "No tests found for Users API"
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v5
+        if: |
+          (matrix.service == 'frontend' && fromJSON(needs.prepare.outputs.changed-services).frontend) ||
+          (matrix.service == 'todos-api' && fromJSON(needs.prepare.outputs.changed-services).todos) ||
+          (matrix.service == 'users-api' && fromJSON(needs.prepare.outputs.changed-services).users) ||
+          (matrix.service == 'auth-api' && fromJSON(needs.prepare.outputs.changed-services).auth) ||
+          (matrix.service == 'log-message-processor' && fromJSON(needs.prepare.outputs.changed-services).log)
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Run tests - Todos API (NodeJS)
+      - name: Run Unit Tests
         run: |
-          docker run --rm microservice-app-example-todos-api npm test || echo "No tests found for Todos API"
+          echo "Running tests for ${{ matrix.service }}"
+          case "${{ matrix.service }}" in
+            "frontend")
+              cd frontend && npm ci && npm test
+              ;;
+            "todos-api")
+              cd todos-api && npm ci && npm test
+              ;;
+            "users-api")
+              cd users-api && ./mvnw test -DskipTests=false || true
+              ;;
+            "auth-api")
+              cd auth-api && go test ./...
+              ;;
+            "log-message-processor")
+              cd log-message-processor && pip install -r requirements.txt && pytest
+              ;;
+          esac
 
-      - name: Run tests - Log Message Processor (Python)
+      - name: Security Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: ${{ env.REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/devops-${{ matrix.service }}:latest
+          format: 'table'
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-test-scan
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Staging (compose)
+        run: docker compose -f docker-compose.yml up -d
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Integration Tests
         run: |
-          docker run --rm microservice-app-example-log-message-processor pytest || echo "No tests found for Log Processor"
+          echo "Waiting services..."
+          sleep 15
+          curl -f http://localhost:8080/login || exit 1
+          curl -f http://localhost:3000/todos || exit 1
 
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build-test-scan]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to Production"
+          docker compose -f docker-compose.yml up -d

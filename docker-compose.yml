@@ -28,7 +28,7 @@ services:
     build: ./users-api
     container_name: users-api
     ports:
-      - "8083:8083"
+      - "8083:8081"
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
