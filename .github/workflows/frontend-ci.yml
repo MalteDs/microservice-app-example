@@ -20,6 +20,10 @@ env:
   IMAGE_VERSION: v1.${{ github.run_number }}
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  REDIS_HOST: ${{ secrets.REDIS_HOST }}
+  REDIS_PORT: ${{ secrets.REDIS_PORT }}
+  REDIS_CHANNEL: ${{ secrets.REDIS_CHANNEL }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   build-test-and-publish:
