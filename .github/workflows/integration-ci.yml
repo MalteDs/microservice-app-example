@@ -68,7 +68,7 @@ jobs:
 
           echo "Access token: $TOKEN"
 
-          curl -f -H "Authorization: Bearer $TOKEN" http://localhost:3000/todos
+          curl -f -H "Authorization: Bearer $TOKEN" http://localhost:8082/todos
 
           curl -f http://localhost:8085 || exit 1
 

@@ -75,6 +75,6 @@ jobs:
       # 8. Smoke test: levantar contenedor y probar endpoint
       - name: Smoke test container
         run: |
-          docker run -d -p 3000:3000 --name todos-api-test ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
+          docker run -d -p 8082:8082 --name todos-api-test ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
           sleep 10
           curl -f http://localhost:3000 || (docker logs todos-api-test && exit 1)
