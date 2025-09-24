@@ -39,7 +39,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/todos-api
     container_name: todos-api
     ports:
-      - "3000:8082"
+      - "8082:8082"
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - JWT_SECRET=${JWT_SECRET}

@@ -67,7 +67,7 @@ jobs:
           file: ./todos-api/Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:latest
+            ${{ +.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:latest
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
