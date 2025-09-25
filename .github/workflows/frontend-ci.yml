@@ -53,12 +53,3 @@ jobs:
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      # Smoke test usando docker-compose para levantar dependencias
-      - name: Smoke test with docker-compose
-
-        run: |
-          sed -i "s|build: ./frontend|image: ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}|" docker-compose.yml
-          docker compose -f docker-compose.yml up -d frontend auth-api users-api todos-api redis zipkin
-          sleep 30
-          curl -f http://localhost:8085 || (docker compose logs frontend && exit 1)

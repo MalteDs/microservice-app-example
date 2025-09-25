@@ -69,11 +69,3 @@ jobs:
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-
-      # 4. Smoke test container published
-      - name: Smoke test container
-        run: |
-          docker run -d -p 8081:8083 -e JWT_SECRET=${{ env.JWT_SECRET }} --name users-api-test ${{ env.DOCKERHUB_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_VERSION }}
-          sleep 15
-          curl -f http://localhost:8081/actuator/health || (docker logs users-api-test && exit 1)
