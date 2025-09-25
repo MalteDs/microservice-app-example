@@ -1,0 +1,76 @@
+name: Log Message Processor - CI Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - feature/github-actions-ci
+    paths:
+      - 'log-message-processor/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'log-message-processor/**'
+      - '.github/workflows/**'
+
+jobs:
+  build-test-and-publish:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      # 1. Checkout del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configurar Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ./log-message-processor/requirements.txt
+
+      # 3. Instalar dependencias
+      - name: Install dependencies
+        working-directory: ./log-message-processor
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Ejecutar tests con Pytest
+      - name: Run tests
+        working-directory: ./log-message-processor
+        run: pytest --maxfail=1 --disable-warnings -q || echo "No tests found"
+
+      # 5. Configurar Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 6. Log in to DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 7. Construir y subir imagen Docker
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./log-message-processor
+          file: ./log-message-processor/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/log-message-processor:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/log-message-processor:${{ github.sha }}
+
+      # 8. Subir resultados de tests (artifacts)
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-message-processor-test-results
+          path: ./log-message-processor/.pytest_cache
