@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	gommonlog "github.com/labstack/gommon/log"
+	"github.com/sony/gobreaker"
 )
 
 var (
@@ -32,6 +33,20 @@ func main() {
 		jwtSecret = envJwtSecret
 	}
 
+	// Configuración el circuit breaker
+	cbSettings := gobreaker.Settings{
+		Name: "UsersAPI",
+		ReadyToTrip: func(counts gobreaker.Counts) bool {
+			return counts.ConsecutiveFailures >= 3
+		},
+		Timeout:    10 * time.Second,
+		MaxRequests: 3,
+		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
+			log.Printf("Circuit breaker %s cambió de estado %v → %v", name, from, to)
+		},
+	}
+	cb := gobreaker.NewCircuitBreaker(cbSettings)
+
 	userService := UserService{
 		Client:         http.DefaultClient,
 		UserAPIAddress: userAPIAddress,
@@ -40,6 +55,7 @@ func main() {
 			"johnd_foo":   nil,
 			"janed_ddd":   nil,
 		},
+		CB: cb, // asignar el circuit breaker al servicio de usuario
 	}
 
 	e := echo.New()

@@ -1,6 +1,10 @@
 FROM golang:1.24.7-alpine AS builder
+
+RUN apk add --no-cache git
+
 WORKDIR /src
 COPY . .
+
 RUN go mod download && go build -o auth-api
 
 FROM alpine:latest
