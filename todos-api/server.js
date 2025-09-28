@@ -29,6 +29,7 @@ const redisClient = require("redis").createClient({
       return Math.min(options.attempt * 100, 2000);
   }        
 });
+const CACHE_TTL = process.env.CACHE_TTL || 60
 const port = process.env.TODO_API_PORT || 8082
 const jwtSecret = process.env.JWT_SECRET || "foo"
 
@@ -57,7 +58,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 const routes = require('./routes')
-routes(app, {tracer, redisClient, logChannel})
+routes(app, {tracer, redisClient, logChannel, CACHE_TTL})
 
 app.listen(port, function () {
   console.log('todo list RESTful API server started on: ' + port)

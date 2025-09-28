@@ -1,6 +1,6 @@
 'use strict';
 const TodoController = require('./todoController');
-module.exports = function (app, {tracer, redisClient, logChannel}) {
+module.exports = function (app, {tracer, redisClient, logChannel, CACHE_TTL}) {
   const todoController = new TodoController({tracer, redisClient, logChannel});
   app.route('/todos')
     .get(function(req,resp) {return todoController.list(req,resp)})
