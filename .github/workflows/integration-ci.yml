@@ -41,23 +41,49 @@ jobs:
       - name: Start stack with docker-compose
         env:
           DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          REDIS_HOST: ${{ secrets.REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
-          REDIS_CHANNEL: ${{ secrets.REDIS_CHANNEL }}
-          SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: docker compose -f docker-compose.yml up -d
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+          REDIS_CHANNEL: ${{ secrets.REDIS_CHANNEL || 'log_channel' }}
+          SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE || 'local' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'default-secret-for-testing' }}
+        run: |
+          # Crear archivo .env para docker-compose
+          echo "REDIS_HOST=redis" > .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "REDIS_CHANNEL=${REDIS_CHANNEL:-log_channel}" >> .env
+          echo "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-local}" >> .env
+          echo "JWT_SECRET=${JWT_SECRET:-default-secret-for-testing}" >> .env
+          docker compose -f docker-compose.yml up -d
 
       - name: Wait for services to be ready
         run: |
+          sleep 30
+          echo "Waiting for auth-api to be ready..."
           for i in {1..30}; do
-            curl -fs http://localhost:8080/login && break || sleep 2
+            if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Auth API is ready"
+              break
+            fi
+            echo "Waiting for auth-api... attempt $i"
+            sleep 3
           done
+          echo "Waiting for todos-api to be ready..."
           for i in {1..30}; do
-            curl -fs http://localhost:3000/todos && break || sleep 2
+            if curl -s http://localhost:8082/ > /dev/null 2>&1; then
+              echo "Todos API is ready"
+              break
+            fi
+            echo "Waiting for todos-api... attempt $i"
+            sleep 3
           done
+          echo "Waiting for frontend to be ready..."
           for i in {1..30}; do
-            curl -fs http://localhost:8085 && break || sleep 2
+            if curl -s http://localhost:8085/ > /dev/null 2>&1; then
+              echo "Frontend is ready"
+              break
+            fi
+            echo "Waiting for frontend... attempt $i"
+            sleep 3
           done
 
       - name: Run E2E Integration Tests
