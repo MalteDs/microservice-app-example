@@ -5,6 +5,15 @@ resource "azurerm_resource_group" "rg" {
   location = "eastus"
 }
 
+# Log Analytics Workspace (requerido para Container Apps)
+resource "azurerm_log_analytics_workspace" "logs" {
+  name                = "logs-ingesoft"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
 # Azure Container Registry (ACR) - cambia el nombre si no es único
 resource "azurerm_container_registry" "acr" {
   name                = "acrIngesoftMicroserviceApp"
@@ -19,6 +28,7 @@ resource "azurerm_container_app_environment" "cae" {
   name                = "cae-ingesoft"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
 }
 
 # ----------------------
@@ -58,4 +68,8 @@ output "container_app_env_name" {
 # Existing ID (si lo necesitas)
 output "container_app_env_id" {
   value = azurerm_container_app_environment.cae.id
+}
+
+output "container_app_env_default_domain" {
+  value = azurerm_container_app_environment.cae.default_domain
 }

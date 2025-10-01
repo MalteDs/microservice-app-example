@@ -5,6 +5,32 @@ data "terraform_remote_state" "infra" {
   }
 }
 
+variable "frontend_tag" {
+  description = "Tag de la imagen del frontend"
+}
+variable "auth_api_tag" {
+  description = "Tag de la imagen del Auth API"
+}
+variable "users_api_tag" {
+  description = "Tag de la imagen del Users API"
+}
+variable "todos_api_tag" {
+  description = "Tag de la imagen del Todos API"
+}
+variable "log_processor_tag" {
+  description = "Tag de la imagen del Log Processor"
+}
+
+
+# Variables comunes
+locals {
+  jwt_secret    = "supersecret"
+  redis_host    = "redis"
+  redis_port    = "6379"
+  redis_channel = "log_channel"
+}
+
+
 # ============================
 # Users API (EXTERNO)
 # ============================
@@ -25,32 +51,33 @@ resource "azurerm_container_app" "users_api" {
 
     container {
       name   = "users-api"
-      image  = "${data.terraform_remote_state.infra.outputs.acr_login_server}/users-api:latest"
+      image = "${data.terraform_remote_state.infra.outputs.acr_login_server}/users-api:${var.users_api_tag}"
       cpu    = 0.5
       memory = "1.0Gi"
 
       env { 
         name  = "JWT_SECRET"  
-        value = "supersecret" 
+        value = local.jwt_secret
       }
       env { 
         name  = "REDIS_HOST"  
-        value = "redis"
+        value = local.redis_host
       }
       env { 
         name  = "REDIS_PORT"  
-        value = "6379" 
+        value = local.redis_port
       }
       env {
         name  = "ZIPKIN_URL"
-        value = "http://zipkin:9411/api/v2/spans"
+        value = "http://${azurerm_container_app.zipkin.ingress[0].fqdn}/api/v2/spans"
+
       }
     }
   }
 
   ingress {
     external_enabled = true
-    target_port      = 8083
+    target_port      = 8081
     traffic_weight {
       percentage      = 100
       latest_revision = true
@@ -62,6 +89,8 @@ resource "azurerm_container_app" "users_api" {
     username             = data.terraform_remote_state.infra.outputs.acr_admin_username
     password_secret_name = "acr-password"
   }
+
+  depends_on = [azurerm_container_app.redis, azurerm_container_app.zipkin]
 }
 
 # ============================
@@ -84,29 +113,30 @@ resource "azurerm_container_app" "auth_api" {
 
     container {
       name   = "auth-api"
-      image  = "${data.terraform_remote_state.infra.outputs.acr_login_server}/auth-api:latest"
+      image = "${data.terraform_remote_state.infra.outputs.acr_login_server}/auth-api:${var.auth_api_tag}"
       cpu    = 0.5
       memory = "1.0Gi"
 
       env { 
         name  = "JWT_SECRET"        
-        value = "supersecret" 
+        value = local.jwt_secret
       }
       env { 
         name  = "REDIS_HOST"        
-        value = "redis"
+        value = local.redis_host
       }
       env { 
         name  = "AUTH_API_PORT"     
         value = "8080" 
       }
+
       env { 
         name  = "USERS_API_ADDRESS" 
-        value = "http://users-api:8083"
+        value = "http://${azurerm_container_app.users_api.ingress[0].fqdn}"
       }
       env {
         name  = "ZIPKIN_URL"
-        value = "http://zipkin:9411/api/v2/spans"
+        value = "http://${azurerm_container_app.zipkin.ingress[0].fqdn}/api/v2/spans"
       }
     }
   }
@@ -149,21 +179,28 @@ resource "azurerm_container_app" "todos_api" {
 
     container {
       name   = "todos-api"
-      image  = "${data.terraform_remote_state.infra.outputs.acr_login_server}/todos-api:latest"
+      image = "${data.terraform_remote_state.infra.outputs.acr_login_server}/todos-api:${var.todos_api_tag}"
       cpu    = 0.5
       memory = "1.0Gi"
 
       env { 
         name  = "JWT_SECRET" 
-        value = "supersecret" 
+        value = local.jwt_secret
       }
+
       env { 
         name  = "REDIS_HOST" 
-        value = "redis"
+        value = local.redis_host
       }
+
+      env {
+        name  = "CACHE_TTL"
+        value = "60"
+      }
+
       env {
         name  = "ZIPKIN_URL"
-        value = "http://zipkin:9411/api/v2/spans"
+        value = "http://${azurerm_container_app.zipkin.ingress[0].fqdn}/api/v2/spans"
       }
     }
   }
@@ -182,6 +219,9 @@ resource "azurerm_container_app" "todos_api" {
     username             = data.terraform_remote_state.infra.outputs.acr_admin_username
     password_secret_name = "acr-password"
   }
+
+  depends_on = [azurerm_container_app.redis, azurerm_container_app.zipkin]
+
 }
 
 # ============================
@@ -204,21 +244,25 @@ resource "azurerm_container_app" "log_processor" {
 
     container {
       name   = "log-processor"
-      image  = "${data.terraform_remote_state.infra.outputs.acr_login_server}/log-processor:latest"
+      image = "${data.terraform_remote_state.infra.outputs.acr_login_server}/log-processor:${var.log_processor_tag}"
       cpu    = 0.5
       memory = "1.0Gi"
 
       env { 
         name  = "REDIS_HOST"    
-        value = "redis"
+        value = local.redis_host
       }
       env { 
         name  = "REDIS_PORT"    
-        value = "6379" 
+        value = local.redis_port
       }
       env { 
         name  = "REDIS_CHANNEL" 
-        value = "log_channel"
+        value = local.redis_channel
+      }
+      env {
+        name  = "ZIPKIN_URL"
+        value = "http://${azurerm_container_app.zipkin.ingress[0].fqdn}/api/v2/spans"
       }
     }
   }
@@ -237,6 +281,9 @@ resource "azurerm_container_app" "log_processor" {
     username             = data.terraform_remote_state.infra.outputs.acr_admin_username
     password_secret_name = "acr-password"
   }
+    
+  depends_on = [azurerm_container_app.redis, azurerm_container_app.zipkin]
+
 }
 
 # ============================
@@ -322,7 +369,7 @@ resource "azurerm_container_app" "frontend" {
 
     container {
       name   = "frontend"
-      image  = "${data.terraform_remote_state.infra.outputs.acr_login_server}/frontend:latest"
+      image = "${data.terraform_remote_state.infra.outputs.acr_login_server}/frontend:${var.frontend_tag}"
       cpu    = 0.5
       memory = "1.0Gi"
 
@@ -338,10 +385,11 @@ resource "azurerm_container_app" "frontend" {
         name  = "TODOS_API_URL" 
         value = "https://${azurerm_container_app.todos_api.ingress[0].fqdn}"
       }
+
       # Zipkin solo accesible internamente
       env {
         name  = "ZIPKIN_URL"
-        value = "http://zipkin:9411/api/v2/spans"
+        value = "http://${azurerm_container_app.zipkin.ingress[0].fqdn}/api/v2/spans"
       }
     }
   }
