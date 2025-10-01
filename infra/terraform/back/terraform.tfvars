@@ -1,0 +1,5 @@
+frontend_tag   = ""
+auth_api_tag   = ""
+users_api_tag  = ""
+todos_api_tag  = ""
+log_processor_tag = ""

@@ -1,0 +1,22 @@
+{
+  "auth_api_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://auth-api.livelymoss-f6dbb4fb.eastus.azurecontainerapps.io"
+  },
+  "frontend_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://frontend.livelymoss-f6dbb4fb.eastus.azurecontainerapps.io"
+  },
+  "todos_api_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://todos-api.livelymoss-f6dbb4fb.eastus.azurecontainerapps.io"
+  },
+  "users_api_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://users-api.livelymoss-f6dbb4fb.eastus.azurecontainerapps.io"
+  }
+}

@@ -1,0 +1,24 @@
+# Archivos de estado de Terraform - NUNCA subir al repositorio
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+
+# Directorio de Terraform - se genera automáticamente
+.terraform/
+.terraform.lock.hcl
+
+# Archivos con datos sensibles - NUNCA subir
+terraform.tfvars
+*.tfvars.backup
+
+# Archivos temporales
+crash.log
+crash.*.log
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Variables de entorno
+.env
