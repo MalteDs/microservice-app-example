@@ -16,7 +16,7 @@ services:
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - AUTH_API_PORT=8080
-      - USERS_API_ADDRESS=http://users-api:8081
+      - USERS_API_ADDRESS=http://users-api:8083
       - JWT_SECRET=${JWT_SECRET}
     restart: unless-stopped
     networks:
